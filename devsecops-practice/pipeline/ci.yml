@@ -1,0 +1,35 @@
+name: DevSecOps practice
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run application tests
+        working-directory: devsecops-practice
+        run: python -m unittest discover -s app -p "test_*.py" -v
+
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@v2
+
+      - name: Scan container definition
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: config
+          scan-ref: devsecops-practice
+          exit-code: "1"
+          severity: HIGH,CRITICAL
+
+      - name: Scan Terraform configuration
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: devsecops-practice/terraform
